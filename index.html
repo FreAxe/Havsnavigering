@@ -94,6 +94,45 @@
       saved.push({ name, lat: pos.lat, lng: pos.lng });
       localStorage.setItem("waypoints", JSON.stringify(saved));
       renderWaypoints();
+
+
+function searchPlace() {
+    const searchTerm = document.getElementById('searchInput').value;
+    if (!searchTerm.trim()) {
+        alert("Skriv in ett platsnamn.");
+        return;
+    }
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+
+        if (userMarker) {
+            if (navLine) map.removeLayer(navLine);
+            navLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateInfoBox(
+                calculateDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1]),
+                calculateBearing(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1])
+            );
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+
     }
 
     function renderWaypoints() {
@@ -114,8 +153,6 @@
     }
 
     renderWaypoints();
-  
-    
 
 
 function searchPlace() {
@@ -126,6 +163,40 @@ function searchPlace() {
     }
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+
+        if (userMarker) {
+            if (navLine) map.removeLayer(navLine);
+            navLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateInfoBox(
+                calculateDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1]),
+                calculateBearing(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1])
+            );
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+
+  
+    
+
+
+fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
     .then(response => response.json())
     .then(data => {
         if (!data || data.length === 0) {
@@ -294,6 +365,45 @@ function searchPlace() {
       saved.push({ name, lat: pos.lat, lng: pos.lng });
       localStorage.setItem("waypoints", JSON.stringify(saved));
       renderWaypoints();
+
+
+function searchPlace() {
+    const searchTerm = document.getElementById('searchInput').value;
+    if (!searchTerm.trim()) {
+        alert("Skriv in ett platsnamn.");
+        return;
+    }
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+
+        if (userMarker) {
+            if (navLine) map.removeLayer(navLine);
+            navLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateInfoBox(
+                calculateDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1]),
+                calculateBearing(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1])
+            );
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+
     }
 
     function renderWaypoints() {
@@ -314,8 +424,6 @@ function searchPlace() {
     }
 
     renderWaypoints();
-  
-    
 
 
 function searchPlace() {
@@ -326,6 +434,40 @@ function searchPlace() {
     }
 
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        if (destMarker) map.removeLayer(destMarker);
+        destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+
+        if (userMarker) {
+            if (navLine) map.removeLayer(navLine);
+            navLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateInfoBox(
+                calculateDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1]),
+                calculateBearing(userMarker.getLatLng().lat, userMarker.getLatLng().lng, latlng[0], latlng[1])
+            );
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+
+  
+    
+
+
+fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
     .then(response => response.json())
     .then(data => {
         if (!data || data.length === 0) {
