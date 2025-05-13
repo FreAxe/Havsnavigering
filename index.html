@@ -1,21 +1,37 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-  <title>Havsnavigering - Västkusten</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>Havsnavigering</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#000020" />
+  <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;Havsnavigering&quot;,&quot;display&quot;:&quot;standalone&quot;}" />
   <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #000020;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      color: white;
+    }
     #infoBox {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 50, 0.7);
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      font-family: sans-serif;
+      background: rgba(0, 0, 30, 0.8);
+      color: #00ffff;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 1.2em;
+      box-shadow: 0 0 8px #00ffff77;
       z-index: 1000;
+    }
+    .leaflet-container {
+      background: #000020;
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -40,42 +56,36 @@
     function toRadians(deg) {
       return deg * Math.PI / 180;
     }
-
     function toDegrees(rad) {
       return rad * 180 / Math.PI;
     }
-
     function calculateDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3;
       const φ1 = toRadians(lat1);
       const φ2 = toRadians(lat2);
       const Δφ = toRadians(lat2 - lat1);
       const Δλ = toRadians(lon2 - lon1);
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      const a = Math.sin(Δφ / 2) ** 2 +
                 Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                Math.sin(Δλ / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       const d = R * c;
       return d / 1852;
     }
-
     function calculateBearing(lat1, lon1, lat2, lon2) {
       const φ1 = toRadians(lat1);
       const φ2 = toRadians(lat2);
       const Δλ = toRadians(lon2 - lon1);
-
       const y = Math.sin(Δλ) * Math.cos(φ2);
       const x = Math.cos(φ1) * Math.sin(φ2) -
                 Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
       const θ = Math.atan2(y, x);
       return (toDegrees(θ) + 360) % 360;
     }
-
     function updateInfoBox(dist, bearing) {
       document.getElementById("infoBox").innerHTML =
         `Avstånd: ${dist.toFixed(2)} NM<br>Riktning: ${bearing.toFixed(0)}°`;
     }
-
     function updatePosition(position) {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
@@ -89,7 +99,7 @@
       if (destMarker) {
         const dest = destMarker.getLatLng();
         if (navLine) map.removeLayer(navLine);
-        navLine = L.polyline([[lat, lng], [dest.lat, dest.lng]], { color: 'blue' }).addTo(map);
+        navLine = L.polyline([[lat, lng], [dest.lat, dest.lng]], { color: 'cyan' }).addTo(map);
 
         const dist = calculateDistance(lat, lng, dest.lat, dest.lng);
         const bearing = calculateBearing(lat, lng, dest.lat, dest.lng);
@@ -111,7 +121,7 @@
           const user = userMarker.getLatLng();
           const dest = destMarker.getLatLng();
           if (navLine) map.removeLayer(navLine);
-          navLine = L.polyline([[user.lat, user.lng], [dest.lat, dest.lng]], { color: 'blue' }).addTo(map);
+          navLine = L.polyline([[user.lat, user.lng], [dest.lat, dest.lng]], { color: 'cyan' }).addTo(map);
 
           const dist = calculateDistance(user.lat, user.lng, dest.lat, dest.lng);
           const bearing = calculateBearing(user.lat, user.lng, dest.lat, dest.lng);
