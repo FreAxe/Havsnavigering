@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8" /></div>
   <title>Havsnavigering</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#000020" />
@@ -38,7 +38,25 @@
     .leaflet-container {
       background: #000020;
     }
-    #compassArrow {
+    
+#compassContainer {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 80px;
+  height: 80px;
+  z-index: 1001;
+}
+#compassBase {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 80px;
+  height: 80px;
+  opacity: 0.4;
+}
+#compassArrow {
+
       position: absolute;
       top: 10px;
       right: 10px;
@@ -66,6 +84,9 @@
 </head>
 <body>
   <div id="infoBox">Avstånd: –<br>Riktning: –</div>
+  
+<div id="compassContainer">
+  <img id="compassBase" src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Compass_rose_pale.svg/240px-Compass_rose_pale.svg.png" />
   <img id="compassArrow" src="data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPgogIDxwb2x5Z29uIHBvaW50cz0iNTAsOTAgMTAsMTAgOTAsMTAiIGZpbGw9InJlZCIvPgo8L3N2Zz4K" />
   <div id="controls">
     <button onclick="clearNavigation()">Avsluta navigering</button>
