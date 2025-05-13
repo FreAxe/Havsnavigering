@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Havsnavigering - Västkusten</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([57.7, 11.9], 10); // Göteborgs skärgård
+
+    // OpenSeaMap + OpenStreetMap
+    const seaLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+      attribution: '© OpenSeaMap'
+    });
+    const baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    });
+
+    baseLayer.addTo(map);
+    seaLayer.addTo(map);
+
+    let userMarker = null;
+    let destMarker = null;
+    let navLine = null;
+
+    // GPS-position
+    function updatePosition(position) {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      if (!userMarker) {
+        userMarker = L.marker([lat, lng]).addTo(map).bindPopup("Din position").openPopup();
+      } else {
+        userMarker.setLatLng([lat, lng]);
+      }
+
+      // Rita linje till mål om den finns
+      if (destMarker) {
+        if (navLine) map.removeLayer(navLine);
+        navLine = L.polyline([[lat, lng], destMarker.getLatLng()], { color: 'blue' }).addTo(map);
+      }
+    }
+
+    navigator.geolocation.watchPosition(updatePosition, console.error, {
+      enableHighAccuracy: true,
+      maximumAge: 1000
+    });
+
+    // Klick på kartan för att välja mål
+    map.on('click', function (e) {
+      if (destMarker) map.removeLayer(destMarker);
+      destMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
+
+      if (userMarker) {
+        const userLatLng = userMarker.getLatLng();
+        if (navLine) map.removeLayer(navLine);
+        navLine = L.polyline([userLatLng, e.latlng], { color: 'blue' }).addTo(map);
+      }
+
+      destMarker.on("drag", function () {
+        if (userMarker) {
+          const userLatLng = userMarker.getLatLng();
+          const destLatLng = destMarker.getLatLng();
+          if (navLine) map.removeLayer(navLine);
+          navLine = L.polyline([userLatLng, destLatLng], { color: 'blue' }).addTo(map);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
