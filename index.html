@@ -117,6 +117,7 @@
   
     
 
+
 function searchPlace() {
     const searchTerm = document.getElementById('searchInput').value;
     if (!searchTerm.trim()) {
@@ -124,12 +125,7 @@ function searchPlace() {
         return;
     }
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`, {
-        headers: {
-            'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
-            'Referer': 'https://freaxe.github.io/Havsnavigering/'
-        }
-    })
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
     .then(response => response.json())
     .then(data => {
         if (!data || data.length === 0) {
@@ -150,6 +146,12 @@ function searchPlace() {
 
         map.setView(latlng, 11);
     })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+    )
     .catch(err => {
         console.error("Fel vid sökning:", err);
         alert("Sökningen misslyckades.");
@@ -315,6 +317,7 @@ function searchPlace() {
   
     
 
+
 function searchPlace() {
     const searchTerm = document.getElementById('searchInput').value;
     if (!searchTerm.trim()) {
@@ -322,12 +325,7 @@ function searchPlace() {
         return;
     }
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`, {
-        headers: {
-            'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
-            'Referer': 'https://freaxe.github.io/Havsnavigering/'
-        }
-    })
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`)
     .then(response => response.json())
     .then(data => {
         if (!data || data.length === 0) {
@@ -348,6 +346,12 @@ function searchPlace() {
 
         map.setView(latlng, 11);
     })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+    )
     .catch(err => {
         console.error("Fel vid sökning:", err);
         alert("Sökningen misslyckades.");
