@@ -6,7 +6,6 @@
   <title>Havsnavigering</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000020" />
-  <base href="./">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     html, body, #map {
@@ -69,7 +68,6 @@
       width: 100%;
     }
     
-</style>
 </head>
 <body>
   <div id="map"></div>
@@ -115,7 +113,31 @@
     }
 
     renderWaypoints();
+  
+    function searchPlace() {
+      const query = document.getElementById("searchInput").value;
+      if (!query) return;
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.length) {
+            alert("Ingen plats hittades.");
+            return;
+          }
+          const result = data[0];
+          const latlng = L.latLng(result.lat, result.lon);
+          if (destMarker) map.removeLayer(destMarker);
+          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
+          map.panTo(latlng);
+          updatePosition({ coords: userMarker.getLatLng() });
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Sökningen misslyckades.");
+        });
+    }
   </script>
+
 
   <script>
     const map = L.map('map').setView([57.7, 11.9], 10);
@@ -219,7 +241,31 @@
     }
 
     renderWaypoints();
+  
+    function searchPlace() {
+      const query = document.getElementById("searchInput").value;
+      if (!query) return;
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.length) {
+            alert("Ingen plats hittades.");
+            return;
+          }
+          const result = data[0];
+          const latlng = L.latLng(result.lat, result.lon);
+          if (destMarker) map.removeLayer(destMarker);
+          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
+          map.panTo(latlng);
+          updatePosition({ coords: userMarker.getLatLng() });
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Sökningen misslyckades.");
+        });
+    }
   </script>
+
 
 </body>
 </html>
