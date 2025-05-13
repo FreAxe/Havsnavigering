@@ -4,131 +4,75 @@
 <head>
   <meta charset="UTF-8" />
   <title>Havsnavigering</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000020" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     html, body, #map {
       height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #000020;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      color: white;
-    }
-    #infoBox, #controls {
-      position: absolute;
-      background: rgba(0, 0, 30, 0.8);
-      color: #00ffff;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 1.1em;
-      box-shadow: 0 0 8px #00ffff77;
-      z-index: 1000;
-    }
-    #infoBox {
-      top: 10px;
-      left: 130px;
-    }
-    #controls {
-      bottom: 10px;
-      left: 10px;
-    }
-    .leaflet-container {
       background: #000020;
     }
-    
-#compassContainer {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 80px;
-  height: 80px;
-  z-index: 1001;
-}
-#compassSVG {
-  width: 100%;
-  height: 100%;
-}
-#needle {
-  transform-origin: 50% 50%;
-  transition: transform 0.3s ease-out;
-}
-#compassArrow {
-
+    #infoBox {
+      position: absolute;
+      top: 80px;
+      left: 10px;
+      background: rgba(0, 0, 30, 0.8);
+      color: #00ffff;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 1.1em;
+      box-shadow: 0 0 10px #00ffff55;
+      z-index: 1000;
+    }
+    #compassContainer {
       position: absolute;
       top: 10px;
       right: 10px;
       width: 80px;
       height: 80px;
       z-index: 1001;
+    }
+    #compassSVG {
+      width: 100%;
+      height: 100%;
+    }
+    #needle {
       transform-origin: 50% 50%;
       transition: transform 0.3s ease-out;
     }
-    #waypoints {
-      margin-top: 8px;
-    }
-    button {
-      margin-top: 5px;
-      background-color: #002244;
-      color: #00ffff;
-      border: 1px solid #00ffff88;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 0.9em;
-      cursor: pointer;
-    }
   </style>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
+  <div id="map"></div>
   <div id="infoBox">Avstånd: –<br>Riktning: –</div>
   <div id="compassContainer">
-<svg id="compassSVG" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="50" r="48" stroke="#00ffff" stroke-width="2" fill="rgba(0,0,0,0.5)" />
-  <text x="50" y="15" text-anchor="middle" fill="#00ffff" font-size="10">N</text>
-  <text x="50" y="95" text-anchor="middle" fill="#00ffff" font-size="10">S</text>
-  <text x="85" y="54" text-anchor="middle" fill="#00ffff" font-size="10">E</text>
-  <text x="15" y="54" text-anchor="middle" fill="#00ffff" font-size="10">W</text>
-  <polygon id="needle" points="50,20 45,55 50,50 55,55" fill="red" />
-</svg>
-</div>
-<!--data:image/svg+xml;base64,CjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiPgogIDxwb2x5Z29uIHBvaW50cz0iNTAsOTAgMTAsMTAgOTAsMTAiIGZpbGw9InJlZCIvPgo8L3N2Zz4K" />
-  <div id="controls">
-    <button onclick="clearNavigation()">Avsluta navigering</button>
-    <button onclick="saveWaypoint()">Spara plats</button>
-    <div id="waypoints"></div>
+    <svg id="compassSVG" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="48" stroke="#00ffff" stroke-width="2" fill="rgba(0,0,0,0.5)" />
+      <text x="50" y="15" text-anchor="middle" fill="#00ffff" font-size="10">N</text>
+      <text x="50" y="95" text-anchor="middle" fill="#00ffff" font-size="10">S</text>
+      <text x="85" y="54" text-anchor="middle" fill="#00ffff" font-size="10">E</text>
+      <text x="15" y="54" text-anchor="middle" fill="#00ffff" font-size="10">W</text>
+      <polygon id="needle" points="50,20 45,55 50,50 55,55" fill="red" />
+    </svg>
   </div>
-  <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js">
-    function clearNavigation() {
-      if (destMarker) {
-        map.removeLayer(destMarker);
-        destMarker = null;
-      }
-      if (navLine) {
-        map.removeLayer(navLine);
-        navLine = null;
-      }
-      document.getElementById("infoBox").innerHTML = "Avstånd: –<br>Riktning: –";
-      document.getElementById("compassArrow").style.transform = "rotate(0deg)";
-    }
-  </script>
-
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     const map = L.map('map').setView([57.7, 11.9], 10);
-    const seaLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { attribution: '© OpenSeaMap' });
-    const baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' });
-    baseLayer.addTo(map); seaLayer.addTo(map);
+    const baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    });
+    const seaLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenSeaMap'
+    });
+    baseLayer.addTo(map);
+    seaLayer.addTo(map);
 
     let userMarker = null;
     let destMarker = null;
     let navLine = null;
-    let currentBearing = 0;
-
-    const arrow = document.getElementById("compassArrow");
 
     function toRadians(deg) { return deg * Math.PI / 180; }
     function toDegrees(rad) { return rad * 180 / Math.PI; }
@@ -138,7 +82,7 @@
       const φ1 = toRadians(lat1), φ2 = toRadians(lat2);
       const Δφ = toRadians(lat2 - lat1);
       const Δλ = toRadians(lon2 - lon1);
-      const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+      const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return (R * c) / 1852;
     }
@@ -147,14 +91,13 @@
       const φ1 = toRadians(lat1), φ2 = toRadians(lat2);
       const Δλ = toRadians(lon2 - lon1);
       const y = Math.sin(Δλ) * Math.cos(φ2);
-      const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+      const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
       const θ = Math.atan2(y, x);
       return (toDegrees(θ) + 360) % 360;
     }
 
     function updateInfoBox(dist, bearing) {
-      document.getElementById("infoBox").innerHTML =
-        `Avstånd: ${dist.toFixed(2)} NM<br>Riktning: ${bearing.toFixed(0)}°`;
+      document.getElementById("infoBox").innerHTML = `Avstånd: ${dist.toFixed(2)} NM<br>Riktning: ${bearing.toFixed(0)}°`;
       document.getElementById("needle").setAttribute("transform", `rotate(${bearing},50,50)`);
     }
 
@@ -173,8 +116,8 @@
         if (navLine) map.removeLayer(navLine);
         navLine = L.polyline([[lat, lng], [dest.lat, dest.lng]], { color: 'cyan' }).addTo(map);
         const dist = calculateDistance(lat, lng, dest.lat, dest.lng);
-        currentBearing = calculateBearing(lat, lng, dest.lat, dest.lng);
-        updateInfoBox(dist, currentBearing);
+        const bearing = calculateBearing(lat, lng, dest.lat, dest.lng);
+        updateInfoBox(dist, bearing);
       }
     }
 
@@ -188,50 +131,6 @@
       destMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
       destMarker.on("drag", () => updatePosition({ coords: userMarker.getLatLng() }));
     });
-
-    function saveWaypoint() {
-      if (!destMarker) return;
-      const name = prompt("Namnge platsen:");
-      if (!name) return;
-      const pos = destMarker.getLatLng();
-      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
-      saved.push({ name, lat: pos.lat, lng: pos.lng });
-      localStorage.setItem("waypoints", JSON.stringify(saved));
-      renderWaypoints();
-    }
-
-    function renderWaypoints() {
-      const container = document.getElementById("waypoints");
-      container.innerHTML = "";
-      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
-      saved.forEach((wp, index) => {
-        const btn = document.createElement("button");
-        btn.innerText = wp.name;
-        btn.onclick = () => {
-          const latlng = L.latLng(wp.lat, wp.lng);
-          if (destMarker) map.removeLayer(destMarker);
-          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
-          map.panTo(latlng);
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    renderWaypoints();
-  
-    function clearNavigation() {
-      if (destMarker) {
-        map.removeLayer(destMarker);
-        destMarker = null;
-      }
-      if (navLine) {
-        map.removeLayer(navLine);
-        navLine = null;
-      }
-      document.getElementById("infoBox").innerHTML = "Avstånd: –<br>Riktning: –";
-      document.getElementById("compassArrow").style.transform = "rotate(0deg)";
-    }
   </script>
-
 </body>
 </html>
