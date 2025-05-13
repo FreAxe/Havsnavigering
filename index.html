@@ -14,6 +14,8 @@
             background: #000020;
         }
         #infoBox {
+  cursor: default;
+
             position: absolute;
             top: 80px;
             left: 10px;
@@ -79,7 +81,26 @@
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([57.7089, 11.9746], 10);
+        
+let unit = "nm";
+document.getElementById("distance").addEventListener("click", () => {
+    unit = (unit === "nm") ? "km" : "nm";
+    if (lastDistance !== null) updateDistanceDisplay(lastDistance);
+});
+
+let lastDistance = null;
+
+function updateDistanceDisplay(meters) {
+    lastDistance = meters;
+    if (unit === "nm") {
+        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1852).toFixed(2) + " NM";
+    } else {
+        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1000).toFixed(2) + " km";
+    }
+}
+
+
+const map = L.map('map').setView([57.7089, 11.9746], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(map);
@@ -144,7 +165,7 @@ function updateCompass(angle) {
 
                         const dist = map.distance(positionMarker.getLatLng(), [lat, lon]) / 1852;
                         const angle = (Math.atan2(lon - positionMarker.getLatLng().lng, lat - positionMarker.getLatLng().lat) * 180 / Math.PI + 360) % 360;
-                        document.getElementById("distance").textContent = `Avstånd: ${dist.toFixed(2)} NM`;
+                        updateDistanceDisplay(dist * 1852);
                         document.getElementById("bearing").textContent = `Riktning: ${angle.toFixed(0)}°`;
                         updateCompass(angle);
                     } else {
