@@ -72,6 +72,32 @@
 </head>
 <body>
   <div id="map"></div>
+    <div id="searchBox" style="
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1001;
+      background: rgba(0,0,30,0.85);
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #00ffff55;
+      display: flex;
+      gap: 5px;">
+      <input type="text" id="searchInput" placeholder="Sök plats..." style="
+        width: 140px;
+        padding: 5px;
+        border-radius: 6px;
+        border: 1px solid #00ffff66;
+        background-color: #001122;
+        color: #00ffff;">
+      <button onclick="searchPlace()" style="
+        padding: 5px 10px;
+        background-color: #002244;
+        color: #00ffff;
+        border: 1px solid #00ffff88;
+        border-radius: 6px;
+        cursor: pointer;">Sök</button>
+    </div>
   <div id="infoBox">Avstånd: –<br>Riktning: –</div>
   <div id="compassContainer">
     <svg id="compassSVG" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
