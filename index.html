@@ -92,24 +92,26 @@
             const ctx = canvas.getContext('2d');
             const w = canvas.width = canvas.offsetWidth;
             const h = canvas.height = canvas.offsetHeight;
-            ctx.clearRect(0, 0, w, h);
             ctx.beginPath();
-            ctx.arc(w/2, h/2, w/2 - 2, 0, 2 * Math.PI);
+            ctx.arc(centerX, centerY, w/2 - 2, 0, 2 * Math.PI);
             ctx.strokeStyle = "#00ffff";
             ctx.lineWidth = 2;
             ctx.stroke();
-            ctx.fillStyle = "red";
-            ctx.moveTo(w/2, h/2);
-            const len = w/2 - 10;
             const rad = (angle - 90) * Math.PI / 180;
-            ctx.lineTo(w/2 + len * Math.cos(rad), h/2 + len * Math.sin(rad));
+            const len = w / 2 - 12;
+            ctx.beginPath();
+            ctx.moveTo(centerX + len * Math.cos(rad), centerY + len * Math.sin(rad)); // Spets
+            ctx.lineTo(centerX + 10 * Math.cos(rad + Math.PI * 0.5), centerY + 10 * Math.sin(rad + Math.PI * 0.5)); // Bas vänster
+            ctx.lineTo(centerX + 10 * Math.cos(rad - Math.PI * 0.5), centerY + 10 * Math.sin(rad - Math.PI * 0.5)); // Bas höger
+            ctx.closePath();
+            ctx.fillStyle = "red";
             ctx.fill();
             ctx.fillStyle = "#00ffff";
             ctx.font = "10px Arial";
-            ctx.fillText("N", w/2 - 3, 10);
-            ctx.fillText("S", w/2 - 3, h - 5);
-            ctx.fillText("E", w - 10, h/2 + 3);
-            ctx.fillText("W", 2, h/2 + 3);
+            ctx.fillText("N", centerX - 3, 10);
+            ctx.fillText("S", centerX - 3, h - 5);
+            ctx.fillText("E", w - 10, centerY + 3);
+            ctx.fillText("W", 2, centerY + 3);
         }
         updateCompass(0);
 
