@@ -42,7 +42,32 @@
       transform-origin: 50% 50%;
       transition: transform 0.3s ease-out;
     }
-  </style>
+  
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,30,0.8);
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #00ffff55;
+      z-index: 1000;
+    }
+    button {
+      background-color: #002244;
+      color: #00ffff;
+      border: 1px solid #00ffff88;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      cursor: pointer;
+      margin-bottom: 5px;
+      display: block;
+    }
+    #waypoints button {
+      width: 100%;
+    }
+    
 </head>
 <body>
   <div id="map"></div>
@@ -58,7 +83,38 @@
     </svg>
   </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js">
+    function saveWaypoint() {
+      if (!destMarker) return;
+      const name = prompt("Namnge platsen:");
+      if (!name) return;
+      const pos = destMarker.getLatLng();
+      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
+      saved.push({ name, lat: pos.lat, lng: pos.lng });
+      localStorage.setItem("waypoints", JSON.stringify(saved));
+      renderWaypoints();
+    }
+
+    function renderWaypoints() {
+      const container = document.getElementById("waypoints");
+      container.innerHTML = "";
+      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
+      saved.forEach(wp => {
+        const btn = document.createElement("button");
+        btn.textContent = wp.name;
+        btn.onclick = () => {
+          const latlng = L.latLng(wp.lat, wp.lng);
+          if (destMarker) map.removeLayer(destMarker);
+          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
+          updatePosition({ coords: userMarker.getLatLng() });
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    renderWaypoints();
+  </script>
+
   <script>
     const map = L.map('map').setView([57.7, 11.9], 10);
     const baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -131,6 +187,37 @@
       destMarker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
       destMarker.on("drag", () => updatePosition({ coords: userMarker.getLatLng() }));
     });
+  
+    function saveWaypoint() {
+      if (!destMarker) return;
+      const name = prompt("Namnge platsen:");
+      if (!name) return;
+      const pos = destMarker.getLatLng();
+      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
+      saved.push({ name, lat: pos.lat, lng: pos.lng });
+      localStorage.setItem("waypoints", JSON.stringify(saved));
+      renderWaypoints();
+    }
+
+    function renderWaypoints() {
+      const container = document.getElementById("waypoints");
+      container.innerHTML = "";
+      const saved = JSON.parse(localStorage.getItem("waypoints") || "[]");
+      saved.forEach(wp => {
+        const btn = document.createElement("button");
+        btn.textContent = wp.name;
+        btn.onclick = () => {
+          const latlng = L.latLng(wp.lat, wp.lng);
+          if (destMarker) map.removeLayer(destMarker);
+          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Mål").openPopup();
+          updatePosition({ coords: userMarker.getLatLng() });
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    renderWaypoints();
   </script>
+
 </body>
 </html>
