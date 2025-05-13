@@ -72,32 +72,6 @@
 </head>
 <body>
   <div id="map"></div>
-    <div id="searchBox" style="
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      z-index: 1001;
-      background: rgba(0,0,30,0.85);
-      padding: 10px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px #00ffff55;
-      display: flex;
-      gap: 5px;">
-      <input type="text" id="searchInput" placeholder="Sök plats..." style="
-        width: 140px;
-        padding: 5px;
-        border-radius: 6px;
-        border: 1px solid #00ffff66;
-        background-color: #001122;
-        color: #00ffff;">
-      <button onclick="searchPlace()" style="
-        padding: 5px 10px;
-        background-color: #002244;
-        color: #00ffff;
-        border: 1px solid #00ffff88;
-        border-radius: 6px;
-        cursor: pointer;">Sök</button>
-    </div>
   <div id="infoBox">Avstånd: –<br>Riktning: –</div>
   <div id="compassContainer">
     <svg id="compassSVG" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -141,11 +115,80 @@
 
     renderWaypoints();
   
-    function searchPlace() {
-      const query = document.getElementById("searchInput").value;
-      if (!query) return;
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=
-${encodeURIComponent(query)}`)
+    
+
+function searchPlace() {
+    const searchTerm = document.getElementById('searchInput').value;
+    if (!searchTerm.trim()) {
+        alert("Skriv in ett platsnamn.");
+        return;
+    }
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`, {
+        headers: {
+            'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
+            'Referer': 'https://freaxe.github.io/Havsnavigering/'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        const destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+        destinationMarker = destMarker;
+
+        if (userMarker) {
+            if (routeLine) map.removeLayer(routeLine);
+            routeLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateDistanceAndBearing(userMarker.getLatLng(), latlng);
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+    &accept-language=sv`, {
+    headers: {
+      'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
+      'Referer': 'https://freaxe.github.io/Havsnavigering/'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (!data || data.length === 0) {
+      alert("Sökningen misslyckades. Ingen plats hittades.");
+      return;
+    }
+
+    const place = data[0];
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+
+    const targetLatLng = L.latLng(lat, lon);
+    L.marker(targetLatLng).addTo(map).bindPopup("Sökresultat: " + place.display_name).openPopup();
+
+    if (currentPosition) {
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.polyline([currentPosition, targetLatLng], { color: 'cyan' }).addTo(map);
+      updateInfo(currentPosition, targetLatLng);
+    }
+
+    map.setView(targetLatLng, 11);
+  })
+  .catch(error => {
+    console.error("Sökfel:", error);
+    alert("Ett fel uppstod vid sökningen.");
+  });
+}
+    `)
         .then(res => res.json())
         .then(data => {
           if (!data.length) {
@@ -270,10 +313,80 @@ ${encodeURIComponent(query)}`)
 
     renderWaypoints();
   
-    function searchPlace() {
-      const query = document.getElementById("searchInput").value;
-      if (!query) return;
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    
+
+function searchPlace() {
+    const searchTerm = document.getElementById('searchInput').value;
+    if (!searchTerm.trim()) {
+        alert("Skriv in ett platsnamn.");
+        return;
+    }
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&accept-language=sv`, {
+        headers: {
+            'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
+            'Referer': 'https://freaxe.github.io/Havsnavigering/'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data || data.length === 0) {
+            alert("Inga träffar. Försök med ett mer exakt platsnamn.");
+            return;
+        }
+
+        const place = data[0];
+        const latlng = [parseFloat(place.lat), parseFloat(place.lon)];
+        const destMarker = L.marker(latlng).addTo(map).bindPopup(place.display_name).openPopup();
+        destinationMarker = destMarker;
+
+        if (userMarker) {
+            if (routeLine) map.removeLayer(routeLine);
+            routeLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
+            updateDistanceAndBearing(userMarker.getLatLng(), latlng);
+        }
+
+        map.setView(latlng, 11);
+    })
+    .catch(err => {
+        console.error("Fel vid sökning:", err);
+        alert("Sökningen misslyckades.");
+    });
+}
+    &accept-language=sv`, {
+    headers: {
+      'User-Agent': 'HavsnavigeringApp/1.0 (freaxe.github.io)',
+      'Referer': 'https://freaxe.github.io/Havsnavigering/'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (!data || data.length === 0) {
+      alert("Sökningen misslyckades. Ingen plats hittades.");
+      return;
+    }
+
+    const place = data[0];
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+
+    const targetLatLng = L.latLng(lat, lon);
+    L.marker(targetLatLng).addTo(map).bindPopup("Sökresultat: " + place.display_name).openPopup();
+
+    if (currentPosition) {
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.polyline([currentPosition, targetLatLng], { color: 'cyan' }).addTo(map);
+      updateInfo(currentPosition, targetLatLng);
+    }
+
+    map.setView(targetLatLng, 11);
+  })
+  .catch(error => {
+    console.error("Sökfel:", error);
+    alert("Ett fel uppstod vid sökningen.");
+  });
+}
+    `)
         .then(res => res.json())
         .then(data => {
           if (!data.length) {
