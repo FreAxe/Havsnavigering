@@ -129,7 +129,6 @@
           const latlng = L.latLng(result.lat, result.lon);
           if (destMarker) map.removeLayer(destMarker);
           destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
-          updatePosition({ coords: userMarker.getLatLng() });
           map.panTo(latlng);
           updatePosition({ coords: userMarker.getLatLng() });
         })
@@ -258,7 +257,6 @@
           const latlng = L.latLng(result.lat, result.lon);
           if (destMarker) map.removeLayer(destMarker);
           destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
-          updatePosition({ coords: userMarker.getLatLng() });
           map.panTo(latlng);
           updatePosition({ coords: userMarker.getLatLng() });
         })
