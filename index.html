@@ -14,6 +14,7 @@
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-path-drag"></script>
     <script>
         const map = L.map('map').setView([57.7, 11.95], 9);
 
@@ -74,27 +75,33 @@
                     [e.latlng.lat - radius, e.latlng.lng - radius],
                     [e.latlng.lat + radius, e.latlng.lng + radius]
                 ];
-                const fillPoly = L.rectangle(bounds, { color: 'green', fillOpacity: 0.4 }).addTo(map);
+                const fillPoly = L.rectangle(bounds, {
+                    color: 'green', fillOpacity: 0.4,
+                    draggable: true
+                }).addTo(map);
                 landPolygons.push(fillPoly);
                 return;
             }
 
-            if (goalMarker) map.removeLayer(goalMarker);
-            if (routeLine) map.removeLayer(routeLine);
+            if (!drawMode && !fillMode) {
+                if (goalMarker) map.removeLayer(goalMarker);
+                if (routeLine) map.removeLayer(routeLine);
 
-            const goal = e.latlng;
-            goalMarker = L.marker(goal).addTo(map).bindPopup("Din destination").openPopup();
+                const goal = e.latlng;
+                goalMarker = L.marker(goal).addTo(map).bindPopup("Din destination").openPopup();
 
-            const coast = findNearestCoast(goal);
-            L.marker(coast).addTo(map).bindPopup("Närmaste havspunkt");
+                const coast = findNearestCoast(goal);
+                L.marker(coast).addTo(map).bindPopup("Närmaste havspunkt");
 
-            const route = avoidObstacle(start, coast);
+                const route = avoidObstacle(start, coast);
 
-            routeLine = L.polyline(route, { color: 'blue', weight: 4 }).addTo(map);
+                routeLine = L.polyline(route, { color: 'blue', weight: 4 }).addTo(map);
+            }
         });
 
         // Rita polygonläge
         let drawMode = false;
+        let fillMode = false;
         let drawnPolygon = [];
         let drawLayer = null;
 
@@ -120,7 +127,7 @@
                 fillMode = false;
                 landBtn.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
                 if (!drawMode && drawnPolygon.length > 2) {
-                    const polygon = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
+                    const polygon = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4, draggable: true }).addTo(map);
                     landPolygons.push(polygon);
                     drawnPolygon = [];
                     if (drawLayer) map.removeLayer(drawLayer);
@@ -136,8 +143,6 @@
             return container;
         };
         toggleButton.addTo(map);
-
-        let fillMode = false;
     </script>
 </body>
 </html>
