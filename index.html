@@ -33,33 +33,60 @@
             color: 'green', fillOpacity: 0.4
         }).addTo(map);
 
-        // Startpunkt i havet
+        // Startpunkt (på havet)
         const start = L.latLng(57.65, 11.8);
         L.marker(start).addTo(map).bindPopup("Startposition").openPopup();
 
-        // Målpunkt (t.ex. klickad plats på land)
-        const goalOnLand = L.latLng(57.82, 11.9);
-        L.marker(goalOnLand).addTo(map).bindPopup("Önskad destination (på land)");
+        let routeLine = null;
+        let goalMarker = null;
 
-        // Beräkna "närmsta kust" (simulerad vattensida av destinationen)
-        const destinationAtWater = L.latLng(57.76, 11.88);
-        L.marker(destinationAtWater).addTo(map).bindPopup("Närmaste havspunkt vid mål");
+        function isInObstacle(latlng) {
+            return latlng.lat >= 57.78 && latlng.lat <= 57.85 &&
+                   latlng.lng >= 11.85 && latlng.lng <= 12.05;
+        }
 
-        // Simulerad omvägspunkt för att undvika hinder
-        const avoidPoint = L.latLng(57.73, 11.95);
-        L.marker(avoidPoint).addTo(map).bindPopup("Undvik hinder");
+        function findNearestCoast(goal) {
+            let step = 0.002;
+            let current = L.latLng(goal.lat, goal.lng);
+            while (!isWater(current) && current.lat > 57.6) {
+                current = L.latLng(current.lat - step, current.lng);
+            }
+            return current;
+        }
 
-        // Rutt: start -> via undvikpunkt -> till havsnära mål
-        const safeRoute = L.polyline([start, avoidPoint, destinationAtWater], {
-            color: 'blue', weight: 4
-        }).addTo(map);
+        function isWater(latlng) {
+            return !isInObstacle(latlng);
+        }
 
-        // Röd linje: rakt till land (inte båtbar)
-        const direct = L.polyline([start, goalOnLand], {
-            color: 'red', dashArray: '5, 10'
-        }).addTo(map);
+        function avoidObstacle(from, to) {
+            const waypoints = [from];
+            const midLat = (from.lat + to.lat) / 2;
+            const midLng = (from.lng + to.lng) / 2;
+            const midpoint = L.latLng(midLat, midLng);
 
-        map.fitBounds(safeRoute.getBounds());
+            if (isInObstacle(midpoint)) {
+                waypoints.push(L.latLng(midLat, midLng + 0.05));
+            }
+
+            waypoints.push(to);
+            return waypoints;
+        }
+
+        map.on('click', function (e) {
+            if (goalMarker) map.removeLayer(goalMarker);
+            if (routeLine) map.removeLayer(routeLine);
+
+            const goal = e.latlng;
+            goalMarker = L.marker(goal).addTo(map).bindPopup("Din destination").openPopup();
+
+            const coast = findNearestCoast(goal);
+            L.marker(coast).addTo(map).bindPopup("Närmaste havspunkt");
+
+            const route = avoidObstacle(start, coast);
+
+            routeLine = L.polyline(route, { color: 'blue', weight: 4 }).addTo(map);
+        });
+
     </script>
 </body>
 </html>
