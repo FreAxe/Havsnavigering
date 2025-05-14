@@ -25,13 +25,15 @@
             opacity: 0.7
         }).addTo(map);
 
-        // Simulerat hinder (t.ex. grund/land)
-        const obstacle = L.rectangle([
-            [57.78, 11.85],
-            [57.85, 12.05]
-        ], {
-            color: 'green', fillOpacity: 0.4
-        }).addTo(map);
+        // Lista av "land"-polygoner (förenklad exempeldata)
+        const landPolygons = [
+            L.polygon([
+                [57.9, 11.8],
+                [57.9, 12.1],
+                [58.1, 12.1],
+                [58.1, 11.8]
+            ], { color: 'green', fillOpacity: 0.4 }).addTo(map)
+        ];
 
         // Startpunkt (på havet)
         const start = L.latLng(57.65, 11.8);
@@ -40,22 +42,17 @@
         let routeLine = null;
         let goalMarker = null;
 
-        function isInObstacle(latlng) {
-            return latlng.lat >= 57.78 && latlng.lat <= 57.85 &&
-                   latlng.lng >= 11.85 && latlng.lng <= 12.05;
+        function isInLand(latlng) {
+            return landPolygons.some(polygon => polygon.getBounds().contains(latlng));
         }
 
         function findNearestCoast(goal) {
             let step = 0.002;
             let current = L.latLng(goal.lat, goal.lng);
-            while (!isWater(current) && current.lat > 57.6) {
+            while (isInLand(current) && current.lat > 57.6) {
                 current = L.latLng(current.lat - step, current.lng);
             }
             return current;
-        }
-
-        function isWater(latlng) {
-            return !isInObstacle(latlng);
         }
 
         function avoidObstacle(from, to) {
@@ -64,7 +61,7 @@
             const midLng = (from.lng + to.lng) / 2;
             const midpoint = L.latLng(midLat, midLng);
 
-            if (isInObstacle(midpoint)) {
+            if (isInLand(midpoint)) {
                 waypoints.push(L.latLng(midLat, midLng + 0.05));
             }
 
