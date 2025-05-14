@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; }
+        .leaflet-container { cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -25,15 +26,7 @@
             opacity: 0.7
         }).addTo(map);
 
-        // Lista av "land"-polygoner (förenklad exempeldata)
-        const landPolygons = [
-            L.polygon([
-                [57.9, 11.8],
-                [57.9, 12.1],
-                [58.1, 12.1],
-                [58.1, 11.8]
-            ], { color: 'green', fillOpacity: 0.4 }).addTo(map)
-        ];
+        const landPolygons = [];
 
         // Startpunkt (på havet)
         const start = L.latLng(57.65, 11.8);
@@ -70,6 +63,13 @@
         }
 
         map.on('click', function (e) {
+            if (drawMode) {
+                drawnPolygon.push(e.latlng);
+                if (drawLayer) map.removeLayer(drawLayer);
+                drawLayer = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
+                return;
+            }
+
             if (goalMarker) map.removeLayer(goalMarker);
             if (routeLine) map.removeLayer(routeLine);
 
@@ -84,6 +84,32 @@
             routeLine = L.polyline(route, { color: 'blue', weight: 4 }).addTo(map);
         });
 
+        // Rita polygonläge
+        let drawMode = false;
+        let drawnPolygon = [];
+        let drawLayer = null;
+
+        const toggleButton = L.control({ position: 'topright' });
+        toggleButton.onAdd = function () {
+            const button = L.DomUtil.create('button', 'leaflet-bar');
+            button.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
+            button.style.background = 'white';
+            button.style.padding = '5px';
+            button.style.cursor = 'pointer';
+
+            button.onclick = function () {
+                drawMode = !drawMode;
+                button.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
+                if (!drawMode && drawnPolygon.length > 2) {
+                    const polygon = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
+                    landPolygons.push(polygon);
+                    drawnPolygon = [];
+                    if (drawLayer) map.removeLayer(drawLayer);
+                }
+            };
+            return button;
+        };
+        toggleButton.addTo(map);
     </script>
 </body>
 </html>
