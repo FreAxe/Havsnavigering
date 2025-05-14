@@ -28,7 +28,6 @@
 
         const landPolygons = [];
 
-        // Startpunkt (på havet)
         const start = L.latLng(57.65, 11.8);
         L.marker(start).addTo(map).bindPopup("Startposition").openPopup();
 
@@ -69,6 +68,16 @@
                 drawLayer = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
                 return;
             }
+            if (fillMode) {
+                const radius = 0.05;
+                const bounds = [
+                    [e.latlng.lat - radius, e.latlng.lng - radius],
+                    [e.latlng.lat + radius, e.latlng.lng + radius]
+                ];
+                const fillPoly = L.rectangle(bounds, { color: 'green', fillOpacity: 0.4 }).addTo(map);
+                landPolygons.push(fillPoly);
+                return;
+            }
 
             if (goalMarker) map.removeLayer(goalMarker);
             if (routeLine) map.removeLayer(routeLine);
@@ -91,15 +100,25 @@
 
         const toggleButton = L.control({ position: 'topright' });
         toggleButton.onAdd = function () {
-            const button = L.DomUtil.create('button', 'leaflet-bar');
-            button.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
-            button.style.background = 'white';
-            button.style.padding = '5px';
-            button.style.cursor = 'pointer';
+            const container = L.DomUtil.create('div');
 
-            button.onclick = function () {
+            const landBtn = L.DomUtil.create('button', '', container);
+            landBtn.innerHTML = 'Lägg till land';
+            landBtn.style.background = 'white';
+            landBtn.style.padding = '5px';
+            landBtn.style.cursor = 'pointer';
+
+            const fillBtn = L.DomUtil.create('button', '', container);
+            fillBtn.innerHTML = '🪣 Markera landyta';
+            fillBtn.style.background = 'white';
+            fillBtn.style.padding = '5px';
+            fillBtn.style.cursor = 'pointer';
+            fillBtn.style.marginTop = '5px';
+
+            landBtn.onclick = function () {
                 drawMode = !drawMode;
-                button.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
+                fillMode = false;
+                landBtn.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
                 if (!drawMode && drawnPolygon.length > 2) {
                     const polygon = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
                     landPolygons.push(polygon);
@@ -107,9 +126,18 @@
                     if (drawLayer) map.removeLayer(drawLayer);
                 }
             };
-            return button;
+
+            fillBtn.onclick = function () {
+                fillMode = !fillMode;
+                drawMode = false;
+                landBtn.innerHTML = 'Lägg till land';
+            };
+
+            return container;
         };
         toggleButton.addTo(map);
+
+        let fillMode = false;
     </script>
 </body>
 </html>
