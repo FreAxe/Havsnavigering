@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Båtrutt runt hinder</title>
+    <title>Båtrutt via havet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -14,35 +14,48 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([57.7, 11.9746], 9);
-
-        // Baslager (OpenSeaMap via OpenStreetMap)
-        L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenSeaMap',
-            opacity: 0.7
-        }).addTo(map);
+        const map = L.map('map').setView([57.7, 11.95], 9);
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap'
         }).addTo(map);
 
-        // Start, kontrollpunkt (runt hinder), och mål
-        const start = L.latLng(57.63, 11.80);
-        const control = L.latLng(57.66, 11.90); // undvik "land/hinder"
-        const destination = L.latLng(57.72, 11.85);
+        L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenSeaMap',
+            opacity: 0.7
+        }).addTo(map);
 
-        // Markörer
-        L.marker(start).addTo(map).bindPopup("Start");
-        L.marker(control).addTo(map).bindPopup("Kontrollpunkt (runt hinder)");
-        L.marker(destination).addTo(map).bindPopup("Destination");
+        // Simulerat hinder (t.ex. grund/land)
+        const obstacle = L.rectangle([
+            [57.78, 11.85],
+            [57.85, 12.05]
+        ], {
+            color: 'green', fillOpacity: 0.4
+        }).addTo(map);
 
-        // Visa rutt som går runt hinder
-        const safeRoute = L.polyline([start, control, destination], {
+        // Startpunkt i havet
+        const start = L.latLng(57.65, 11.8);
+        L.marker(start).addTo(map).bindPopup("Startposition").openPopup();
+
+        // Målpunkt (t.ex. klickad plats på land)
+        const goalOnLand = L.latLng(57.82, 11.9);
+        L.marker(goalOnLand).addTo(map).bindPopup("Önskad destination (på land)");
+
+        // Beräkna "närmsta kust" (simulerad vattensida av destinationen)
+        const destinationAtWater = L.latLng(57.76, 11.88);
+        L.marker(destinationAtWater).addTo(map).bindPopup("Närmaste havspunkt vid mål");
+
+        // Simulerad omvägspunkt för att undvika hinder
+        const avoidPoint = L.latLng(57.73, 11.95);
+        L.marker(avoidPoint).addTo(map).bindPopup("Undvik hinder");
+
+        // Rutt: start -> via undvikpunkt -> till havsnära mål
+        const safeRoute = L.polyline([start, avoidPoint, destinationAtWater], {
             color: 'blue', weight: 4
         }).addTo(map);
 
-        // Visa rak rutt (farlig)
-        const directRoute = L.polyline([start, destination], {
+        // Röd linje: rakt till land (inte båtbar)
+        const direct = L.polyline([start, goalOnLand], {
             color: 'red', dashArray: '5, 10'
         }).addTo(map);
 
