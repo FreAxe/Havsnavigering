@@ -2,188 +2,86 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <meta charset="UTF-8" />
-    <title>Havsnavigering</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        html, body, #map {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background: #000020;
-        }
-        #infoBox {
-            position: absolute;
-            top: 80px;
-            left: 10px;
-            background: rgba(0, 0, 30, 0.8);
-            color: #00ffff;
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-size: 1.1em;
-            box-shadow: 0 0 10px #00ffff55;
-            z-index: 1000;
-        }
-        #searchBox {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            display: flex;
-            background: rgba(0,0,0,0.5);
-            padding: 5px;
-            border-radius: 10px;
-        }
-        #searchInput {
-            padding: 5px;
-            font-size: 1em;
-            width: 200px;
-            border: none;
-            border-radius: 5px;
-        }
-        #searchButton {
-            padding: 5px 10px;
-            margin-left: 5px;
-            background: #00ffff;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #compassContainer {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 80px;
-            height: 80px;
-            z-index: 1000;
-        }
-        #compassCanvas {
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Havsnavigering</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; background: #000020; }
+    #searchBox {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      background: rgba(0,0,0,0.5);
+      padding: 5px;
+      border-radius: 10px;
+    }
+    #searchInput {
+      padding: 5px;
+      font-size: 1em;
+      width: 200px;
+      border: none;
+      border-radius: 5px;
+    }
+    #searchButton {
+      padding: 5px 10px;
+      margin-left: 5px;
+      background: #00ffff;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <div id="searchBox">
-        <input type="text" id="searchInput" placeholder="Sök plats" />
-        <button id="searchButton">Sök</button>
-    </div>
-    <div id="infoBox">
-        <div id="distance">Avstånd: –</div>
-        <div id="bearing">Riktning: –</div>
-    </div>
-    <div id="compassContainer"><canvas id="compassCanvas"></canvas></div>
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        
-let unit = "nm";
-let lastDistance = null;
-document.getElementById("distance").style.cursor = "pointer";
-document.getElementById("distance").style.textDecoration = "underline";
-document.getElementById("distance").addEventListener("click", () => {
-    unit = (unit === "nm") ? "km" : "nm";
-    if (lastDistance !== null) updateDistanceDisplay(lastDistance);
-});
+  <div id="searchBox">
+    <input type="text" id="searchInput" placeholder="Sök plats" />
+    <button id="searchButton">Sök</button>
+  </div>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([57.7089, 11.9746], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png').addTo(map);
 
-function updateDistanceDisplay(meters) {
-    lastDistance = meters;
-    if (unit === "nm") {
-        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1852).toFixed(2) + " NM";
-    } else {
-        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1000).toFixed(2) + " km";
-    }
-}
+    let destMarker, userMarker, routeLine;
 
+    document.getElementById("searchButton").addEventListener("click", () => {
+      searchPlace();
+    });
 
-const map = L.map('map').setView([57.7089, 11.9746], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+    document.getElementById("searchInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        searchPlace();
+      }
+    });
 
-    const seaLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-        attribution: '© OpenSeaMap'
-    }).addTo(map);
-
-        const positionMarker = L.marker([57.7089, 11.9746]).addTo(map).bindPopup("Din position").openPopup();
-        let destinationMarker, line;
-
-        
-function updateCompass(angle) {
-    const canvas = document.getElementById('compassCanvas');
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width = canvas.offsetWidth;
-    const h = canvas.height = canvas.offsetHeight;
-    const centerX = w / 2;
-    const centerY = h / 2;
-
-    ctx.clearRect(0, 0, w, h); // rensa
-
-    // Rita cirkel
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, w/2 - 2, 0, 2 * Math.PI);
-    ctx.strokeStyle = "#00ffff";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Rita pil
-    const rad = (angle - 90) * Math.PI / 180;
-    const len = w / 2 - 12;
-    ctx.beginPath();
-    ctx.moveTo(centerX + len * Math.cos(rad), centerY + len * Math.sin(rad));
-    ctx.lineTo(centerX + 10 * Math.cos(rad + Math.PI * 0.5), centerY + 10 * Math.sin(rad + Math.PI * 0.5));
-    ctx.lineTo(centerX + 10 * Math.cos(rad - Math.PI * 0.5), centerY + 10 * Math.sin(rad - Math.PI * 0.5));
-    ctx.closePath();
-    ctx.fillStyle = "red";
-    ctx.fill();
-
-    // N/E/S/W-text
-    ctx.fillStyle = "#00ffff";
-    ctx.font = "10px Arial";
-    ctx.fillText("N", centerX - 3, 10);
-    ctx.fillText("S", centerX - 3, h - 5);
-    ctx.fillText("E", w - 10, centerY + 3);
-    ctx.fillText("W", 2, centerY + 3);
-}
-
-        updateCompass(0);
-
-        document.getElementById('searchButton').addEventListener('click', () => {
-            const query = document.getElementById('searchInput').value;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const result = data[0];
-                        const lat = parseFloat(result.lat);
-                        const lon = parseFloat(result.lon);
-                        if (destinationMarker) map.removeLayer(destinationMarker);
-                        if (line) map.removeLayer(line);
-                        destinationMarker = L.marker([lat, lon]).addTo(map).bindPopup("Mål").openPopup();
-                        line = L.polyline([positionMarker.getLatLng(), [lat, lon]], {color: 'cyan'}).addTo(map);
-
-    const seaLayer = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-        attribution: '© OpenSeaMap'
-    }).addTo(map);
-                        map.fitBounds(line.getBounds());
-
-                        const dist = map.distance(positionMarker.getLatLng(), [lat, lon]) / 1852;
-                        const angle = (Math.atan2(lon - positionMarker.getLatLng().lng, lat - positionMarker.getLatLng().lat) * 180 / Math.PI + 360) % 360;
-                        updateDistanceDisplay(dist * 1852);
-                        document.getElementById("bearing").textContent = `Riktning: ${angle.toFixed(0)}°`;
-                        updateCompass(angle);
-                    } else {
-                        alert("Sökningen misslyckades.");
-                    }
-                })
-                .catch(err => {
-                    alert("Fel vid sökning.");
-                    console.error(err);
-                });
+    function searchPlace() {
+      const query = document.getElementById("searchInput").value;
+      if (!query) return;
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data.length) {
+            alert("Ingen plats hittades.");
+            return;
+          }
+          const result = data[0];
+          const latlng = L.latLng(result.lat, result.lon);
+          if (destMarker) map.removeLayer(destMarker);
+          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
+          map.setView(latlng, 11);
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Sökningen misslyckades.");
         });
-    </script>
+    }
+  </script>
 </body>
 </html>
