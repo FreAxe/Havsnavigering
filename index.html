@@ -1,22 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="sv">
->
 <head>
   <meta charset="UTF-8" />
   <title>Havsnavigering</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    html, body, #map {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background: #000020;
-    }
+    html, body, #map { height: 100%; margin: 0; padding: 0; background: #000020; }
     #searchBox {
       position: absolute;
-      top: 20px;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
@@ -43,7 +36,7 @@
     }
     #infoBox {
       position: absolute;
-      top: 100px;
+      top: 70px;
       left: 10px;
       background: rgba(0, 0, 30, 0.8);
       color: #00ffff;
@@ -59,7 +52,7 @@
     }
     #compassContainer {
       position: absolute;
-      top: 20px;
+      top: 10px;
       right: 10px;
       width: 80px;
       height: 80px;
@@ -68,6 +61,48 @@
     #compassCanvas {
       width: 100%;
       height: 100%;
+    }
+    #symbolPanel {
+      position: absolute;
+      top: 0;
+      left: -220px;
+      width: 200px;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 10px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+      z-index: 1001;
+      transition: left 0.3s ease;
+    }
+    #symbolPanel.open { left: 0; }
+    #togglePanel {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      width: 20px;
+      height: 40px;
+      background: #00ffff;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1002;
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+    }
+    .symbol-preview {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .symbol-preview img {
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -81,29 +116,30 @@
     <div id="bearing">Riktning: –</div>
   </div>
   <div id="compassContainer"><canvas id="compassCanvas"></canvas></div>
+  <div id="togglePanel">&gt;</div>
+  <div id="symbolPanel">
+    <h4>Lägg till symbol</h4>
+    <input type="file" id="symbolUploader" accept=".svg" />
+    <div class="symbol-preview" id="symbolLibrary"></div>
+  </div>
   <div id="map"></div>
-
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     const map = L.map('map').setView([57.7089, 11.9746], 10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png').addTo(map);
-
     let unit = "nm";
     let lastDistance = null;
     let destMarker, userMarker, navLine;
 
     function updateDistanceDisplay(meters) {
       lastDistance = meters;
-      if (unit === "nm") {
-        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1852).toFixed(2) + " NM";
-      } else {
-        document.getElementById("distance").textContent = "Avstånd: " + (meters / 1000).toFixed(2) + " km";
-      }
+      const dist = unit === "nm" ? (meters / 1852).toFixed(2) + " NM" : (meters / 1000).toFixed(2) + " km";
+      document.getElementById("distance").textContent = "Avstånd: " + dist;
     }
 
     document.getElementById("distance").addEventListener("click", () => {
-      unit = (unit === "nm") ? "km" : "nm";
+      unit = unit === "nm" ? "km" : "nm";
       if (lastDistance !== null) updateDistanceDisplay(lastDistance);
     });
 
@@ -114,14 +150,12 @@
       const h = canvas.height = canvas.offsetHeight;
       const centerX = w / 2;
       const centerY = h / 2;
-
       ctx.clearRect(0, 0, w, h);
       ctx.beginPath();
       ctx.arc(centerX, centerY, w/2 - 2, 0, 2 * Math.PI);
       ctx.strokeStyle = "#00ffff";
       ctx.lineWidth = 2;
       ctx.stroke();
-
       const rad = (angle - 90) * Math.PI / 180;
       const len = w / 2 - 12;
       ctx.beginPath();
@@ -131,7 +165,6 @@
       ctx.closePath();
       ctx.fillStyle = "red";
       ctx.fill();
-
       ctx.fillStyle = "black";
       ctx.font = "10px Arial";
       ctx.fillText("N", centerX - 3, 10);
@@ -152,39 +185,58 @@
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&accept-language=sv`)
         .then(res => res.json())
         .then(data => {
-          if (!data.length) {
-            alert("Ingen plats hittades.");
-            return;
-          }
+          if (!data.length) return alert("Ingen plats hittades.");
           const result = data[0];
           const latlng = L.latLng(result.lat, result.lon);
           if (destMarker) map.removeLayer(destMarker);
-          destMarker = L.marker(latlng, { draggable: true }).addTo(map).bindPopup("Sökresultat").openPopup();
+          destMarker = L.marker(latlng).addTo(map).bindPopup("Sökresultat").openPopup();
           map.setView(latlng, 11);
-
           if (userMarker) {
             if (navLine) map.removeLayer(navLine);
             navLine = L.polyline([userMarker.getLatLng(), latlng], { color: 'cyan' }).addTo(map);
-
             const dist = map.distance(userMarker.getLatLng(), latlng);
             const angle = (Math.atan2(latlng.lng - userMarker.getLatLng().lng, latlng.lat - userMarker.getLatLng().lat) * 180 / Math.PI + 360) % 360;
             updateInfoBox(dist, angle);
           }
         })
-        .catch(err => {
-          console.error(err);
-          alert("Sökningen misslyckades.");
-        });
+        .catch(err => alert("Sökningen misslyckades."));
     }
 
     document.getElementById("searchButton").addEventListener("click", searchPlace);
-    document.getElementById("searchInput").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") searchPlace();
-    });
+    document.getElementById("searchInput").addEventListener("keydown", e => { if (e.key === "Enter") searchPlace(); });
 
-    // Simulerad användarposition
     userMarker = L.marker([57.7089, 11.9746]).addTo(map).bindPopup("Din position").openPopup();
     updateCompass(0);
+
+    // Symbolpanel toggle
+    const toggleBtn = document.getElementById("togglePanel");
+    const panel = document.getElementById("symbolPanel");
+    toggleBtn.addEventListener("click", () => {
+      panel.classList.toggle("open");
+      toggleBtn.innerHTML = panel.classList.contains("open") ? "&lt;" : "&gt;";
+    });
+
+    // Symboluppladdning
+    const uploader = document.getElementById("symbolUploader");
+    const library = document.getElementById("symbolLibrary");
+    uploader.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file || !file.name.endsWith(".svg")) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement("img");
+        img.src = e.target.result;
+        img.title = file.name;
+        library.appendChild(img);
+        img.addEventListener("click", () => {
+          map.once("click", function(ev) {
+            const icon = L.icon({ iconUrl: img.src, iconSize: [32, 32] });
+            L.marker(ev.latlng, { icon }).addTo(map);
+          });
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   </script>
 </body>
 </html>
