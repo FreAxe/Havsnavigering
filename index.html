@@ -1,148 +1,194 @@
+
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <title>Båtrutt via havet</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; }
-        .leaflet-container { cursor: crosshair; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Landverktyg</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    #toolbox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
+      padding: 10px;
+      z-index: 1000;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+    #toolbox button {
+      display: block;
+      width: 160px;
+      margin-bottom: 5px;
+      padding: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+    }
+    .land {
+      fill: green;
+      fill-opacity: 0.5;
+      stroke: #004400;
+    }
+  </style>
 </head>
 <body>
-    <div id="map"></div>
+  <div id="toolbox">
+    <button id="drawPolygon">🖊️ Lägg till land</button>
+    <button id="markArea">🪣 Markera landyta</button>
+    <button id="deleteMode">❌ Radera markerat</button>
+  
+    <button id="saveLand">💾 Spara landområden</button>
+    <button id="exportLand">📤 Exportera</button>
+    <input type="file" id="importLand" accept=".json" />
+  </div>
+  <div id="map">
+</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-path-drag"></script>
-    <script>
-        const map = L.map('map').setView([57.7, 11.95], 9);
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+  <script>
+    const map = L.map('map').setView([57.7, 11.95], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+    let drawnItems = new L.FeatureGroup().addTo(map);
+    let drawControl = new L.Control.Draw({
+      edit: {
+        featureGroup: drawnItems,
+        edit: true,
+        remove: false
+      },
+      draw: {
+        polygon: false,
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false
+      }
+    });
+    map.addControl(drawControl);
 
-        L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenSeaMap',
-            opacity: 0.7
-        }).addTo(map);
+    let activeTool = null;
+    const toolboxButtons = document.querySelectorAll("#toolbox button");
+    function setActiveTool(tool) {
+      activeTool = tool;
+      toolboxButtons.forEach(btn => btn.classList.remove("active"));
+      document.getElementById(tool).classList.add("active");
+    }
 
-        const landPolygons = [];
-
-        const start = L.latLng(57.65, 11.8);
-        L.marker(start).addTo(map).bindPopup("Startposition").openPopup();
-
-        let routeLine = null;
-        let goalMarker = null;
-
-        function isInLand(latlng) {
-            return landPolygons.some(polygon => polygon.getBounds().contains(latlng));
+    document.getElementById("drawPolygon").addEventListener("click", () => {
+      setActiveTool("drawPolygon");
+      new L.Draw.Polygon(map, {
+        allowIntersection: false,
+        showArea: true,
+        repeatMode: false,
+        shapeOptions: {
+          color: "#004400",
+          fillColor: "green",
+          fillOpacity: 0.5
         }
+      }).enable();
+    });
 
-        function findNearestCoast(goal) {
-            let step = 0.002;
-            let current = L.latLng(goal.lat, goal.lng);
-            while (isInLand(current) && current.lat > 57.6) {
-                current = L.latLng(current.lat - step, current.lng);
-            }
-            return current;
-        }
+    document.getElementById("markArea").addEventListener("click", () => {
+      setActiveTool("markArea");
+      map.once("click", function(e) {
+        const radius = 0.01; // ca 1 km radie
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        const square = [
+          [lat - radius, lng - radius],
+          [lat - radius, lng + radius],
+          [lat + radius, lng + radius],
+          [lat + radius, lng - radius]
+        ];
+        const polygon = L.polygon(square, {
+          color: "#004400",
+          fillColor: "green",
+          fillOpacity: 0.5
+        }).addTo(drawnItems);
+      });
+    });
 
-        function avoidObstacle(from, to) {
-            const waypoints = [from];
-            const midLat = (from.lat + to.lat) / 2;
-            const midLng = (from.lng + to.lng) / 2;
-            const midpoint = L.latLng(midLat, midLng);
-
-            if (isInLand(midpoint)) {
-                waypoints.push(L.latLng(midLat, midLng + 0.05));
-            }
-
-            waypoints.push(to);
-            return waypoints;
-        }
-
-        map.on('click', function (e) {
-            if (drawMode) {
-                drawnPolygon.push(e.latlng);
-                if (drawLayer) map.removeLayer(drawLayer);
-                drawLayer = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4 }).addTo(map);
-                return;
-            }
-            if (fillMode) {
-                const radius = 0.05;
-                const bounds = [
-                    [e.latlng.lat - radius, e.latlng.lng - radius],
-                    [e.latlng.lat + radius, e.latlng.lng + radius]
-                ];
-                const fillPoly = L.rectangle(bounds, {
-                    color: 'green', fillOpacity: 0.4,
-                    draggable: true
-                }).addTo(map);
-                landPolygons.push(fillPoly);
-                return;
-            }
-
-            if (!drawMode && !fillMode) {
-                if (goalMarker) map.removeLayer(goalMarker);
-                if (routeLine) map.removeLayer(routeLine);
-
-                const goal = e.latlng;
-                goalMarker = L.marker(goal).addTo(map).bindPopup("Din destination").openPopup();
-
-                const coast = findNearestCoast(goal);
-                L.marker(coast).addTo(map).bindPopup("Närmaste havspunkt");
-
-                const route = avoidObstacle(start, coast);
-
-                routeLine = L.polyline(route, { color: 'blue', weight: 4 }).addTo(map);
-            }
+    document.getElementById("deleteMode").addEventListener("click", () => {
+      setActiveTool("deleteMode");
+      drawnItems.eachLayer(layer => {
+        layer.on("click", function() {
+          drawnItems.removeLayer(layer);
         });
+      });
+    });
 
-        // Rita polygonläge
-        let drawMode = false;
-        let fillMode = false;
-        let drawnPolygon = [];
-        let drawLayer = null;
+    map.on(L.Draw.Event.CREATED, function (e) {
+      const layer = e.layer;
+      drawnItems.addLayer(layer);
+    });
+  
+    // Spara polygoner till localStorage
+    document.getElementById("saveLand").addEventListener("click", () => {
+      const data = [];
+      drawnItems.eachLayer(layer => {
+        if (layer instanceof L.Polygon) {
+          data.push(layer.getLatLngs());
+        }
+      });
+      localStorage.setItem("savedLand", JSON.stringify(data));
+      alert("Landområden sparade.");
+    });
 
-        const toggleButton = L.control({ position: 'topright' });
-        toggleButton.onAdd = function () {
-            const container = L.DomUtil.create('div');
+    // Ladda vid uppstart
+    window.addEventListener("load", () => {
+      const saved = localStorage.getItem("savedLand");
+      if (saved) {
+        const shapes = JSON.parse(saved);
+        shapes.forEach(latlngs => {
+          L.polygon(latlngs, {
+            color: "#004400",
+            fillColor: "green",
+            fillOpacity: 0.5
+          }).addTo(drawnItems);
+        });
+      }
+    });
 
-            const landBtn = L.DomUtil.create('button', '', container);
-            landBtn.innerHTML = 'Lägg till land';
-            landBtn.style.background = 'white';
-            landBtn.style.padding = '5px';
-            landBtn.style.cursor = 'pointer';
+    // Exportera till JSON-fil
+    document.getElementById("exportLand").addEventListener("click", () => {
+      const data = [];
+      drawnItems.eachLayer(layer => {
+        if (layer instanceof L.Polygon) {
+          data.push(layer.getLatLngs());
+        }
+      });
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "landomraden.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
 
-            const fillBtn = L.DomUtil.create('button', '', container);
-            fillBtn.innerHTML = '🪣 Markera landyta';
-            fillBtn.style.background = 'white';
-            fillBtn.style.padding = '5px';
-            fillBtn.style.cursor = 'pointer';
-            fillBtn.style.marginTop = '5px';
-
-            landBtn.onclick = function () {
-                drawMode = !drawMode;
-                fillMode = false;
-                landBtn.innerHTML = drawMode ? 'Avsluta' : 'Lägg till land';
-                if (!drawMode && drawnPolygon.length > 2) {
-                    const polygon = L.polygon(drawnPolygon, { color: 'green', fillOpacity: 0.4, draggable: true }).addTo(map);
-                    landPolygons.push(polygon);
-                    drawnPolygon = [];
-                    if (drawLayer) map.removeLayer(drawLayer);
-                }
-            };
-
-            fillBtn.onclick = function () {
-                fillMode = !fillMode;
-                drawMode = false;
-                landBtn.innerHTML = 'Lägg till land';
-            };
-
-            return container;
-        };
-        toggleButton.addTo(map);
-    </script>
+    // Importera från JSON-fil
+    document.getElementById("importLand").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const shapes = JSON.parse(evt.target.result);
+        shapes.forEach(latlngs => {
+          L.polygon(latlngs, {
+            color: "#004400",
+            fillColor: "green",
+            fillOpacity: 0.5
+          }).addTo(drawnItems);
+        });
+        alert("Landområden importerade.");
+      };
+      reader.readAsText(file);
+    });
+</script>
 </body>
 </html>
